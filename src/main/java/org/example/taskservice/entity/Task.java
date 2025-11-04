@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "tasks")
 public class Task {
+    
     @Id
     @SequenceGenerator(
             name = "sequence_task",
