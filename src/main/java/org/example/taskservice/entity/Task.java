@@ -1,4 +1,4 @@
-package org.example.taskservice.Tasks;
+package org.example.taskservice.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -29,15 +29,19 @@ public class Task {
             generator = "sequence_task"
     )
     private Long id;
+
     @NotBlank
     @Size(max = 70)
     @Column(nullable = false, length = 70)
     private String name;
+
     @NotBlank
     private String description;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime timeOfCreation;
+
     private boolean completed;
 
 

@@ -1,7 +1,12 @@
-package org.example.taskservice.Tasks;
+package org.example.taskservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.taskservice.dto.TaskRequestDto;
+import org.example.taskservice.dto.TaskResponseDto;
+import org.example.taskservice.dto.mapping.TaskMapping;
+import org.example.taskservice.entity.Task;
+import org.example.taskservice.service.serviceImpl.TaskServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,40 +18,35 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskController {
 
-    private final TaskService taskService;
+    private final TaskServiceImpl taskService;
+
+    private final TaskMapping taskMapping;
 
     @GetMapping
     public ResponseEntity<?> getAllTasks() {
-        List<Task> tasks = taskService.findAll();
-
-        if (tasks.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Задачи не найдены,обновите страницу");
-        }
-
+        List<Task> tasks = taskService.getTasks();
         return ResponseEntity.ok().body(tasks);
     }
 
     @GetMapping("/{taskId}")
     public ResponseEntity<?> getTaskById(@PathVariable Long taskId) {
-        return taskService.findById(taskId)
-                //юзается кастинг
-                .map(task -> ResponseEntity.ok().body((Object) task))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Задача не найдена, перезапустите страницу"));
+        taskService.getTaskById(taskId);
+        return ResponseEntity.ok().body(taskId);
+
     }
 
     @PostMapping
-    public ResponseEntity<?> createTask(@Valid @RequestBody Task task) {
+    public ResponseEntity<?> createTask(@RequestBody @Valid TaskRequestDto taskRequestDto) {
+        Task task = taskMapping.fromRequestDto(taskRequestDto);
         Task createdTask = taskService.createTask(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+        TaskResponseDto taskResponse = taskMapping.toResponseDto(createdTask);
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskResponse);
 
     }
 
     @DeleteMapping("/{taskId}")
     public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
-        taskService.deleteTask(taskId);
-        //нужно ли здесь такое body
+        taskService.deleteTaskById(taskId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(taskId);
     }
 

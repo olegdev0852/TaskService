@@ -1,5 +1,7 @@
-package org.example.taskservice.Tasks;
+package org.example.taskservice.conf;
 
+import org.example.taskservice.entity.Task;
+import org.example.taskservice.repository.TaskRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
