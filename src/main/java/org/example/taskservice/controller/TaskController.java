@@ -4,9 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.taskservice.dto.TaskRequestDto;
 import org.example.taskservice.dto.TaskResponseDto;
-import org.example.taskservice.dto.mapping.TaskMapping;
-import org.example.taskservice.entity.Task;
-import org.example.taskservice.service.serviceImpl.TaskServiceImpl;
+import org.example.taskservice.service.TaskService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +16,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskController {
 
-    private final TaskServiceImpl taskService;
-
-    private final TaskMapping taskMapping;
+    private final TaskService taskService;
 
     @GetMapping
     public ResponseEntity<?> getAllTasks() {
-        List<Task> tasks = taskService.getTasks();
+        List<TaskResponseDto> tasks = taskService.getTasks();
         return ResponseEntity.ok().body(tasks);
     }
 
@@ -32,16 +28,12 @@ public class TaskController {
     public ResponseEntity<?> getTaskById(@PathVariable Long taskId) {
         taskService.getTaskById(taskId);
         return ResponseEntity.ok().body(taskId);
-
     }
 
     @PostMapping
     public ResponseEntity<?> createTask(@RequestBody @Valid TaskRequestDto taskRequestDto) {
-        Task task = taskMapping.fromRequestDto(taskRequestDto);
-        Task createdTask = taskService.createTask(task);
-        TaskResponseDto taskResponse = taskMapping.toResponseDto(createdTask);
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskResponse);
-
+        taskService.createTask(taskRequestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskRequestDto);
     }
 
     @DeleteMapping("/{taskId}")
@@ -52,15 +44,10 @@ public class TaskController {
 
     @PutMapping("/{taskId}")
     public ResponseEntity<?> updateTask(
-           @PathVariable Long taskId,
-           @RequestParam(value = "name",required = false) String name,
-           @RequestParam(value = "description", required = false) String description
-            ){
-
-        taskService.updateTask(taskId,name,description);
+            @PathVariable Long taskId,
+            @RequestBody TaskRequestDto taskRequest
+    ) {
+        taskService.updateTask(taskId, taskRequest.name(), taskRequest.description());
         return ResponseEntity.ok("Задача успешно обновлена");
     }
-
-
-
 }

@@ -1,3 +1,5 @@
 package org.example.taskservice.dto;
 
-public record ErrorResponse(String code, String message, String correlationId) {}
+import org.springframework.http.HttpStatus;
+
+public record ErrorResponse(HttpStatus httpStatus, String message, String correlationId) {}

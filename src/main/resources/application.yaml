@@ -15,5 +15,6 @@ server:
         include-message: always
 
 tasks:
-    clean:
-        days: 30
+        scheduled:
+            cleanup-tasks-cron: "0 0 10 * * ?"
+            cleanup-tasks-days-threshold: 30

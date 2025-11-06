@@ -1,5 +1,7 @@
 package org.example.taskservice.service;
 
+import org.example.taskservice.dto.TaskRequestDto;
+import org.example.taskservice.dto.TaskResponseDto;
 import org.example.taskservice.entity.Task;
 
 import java.util.List;
@@ -7,11 +9,11 @@ import java.util.List;
 
 public interface TaskService {
 
-    List<Task> getTasks();
+    List<TaskResponseDto> getTasks();
 
-    Task getTaskById(Long id);
+    TaskResponseDto getTaskById(Long id);
 
-    Task createTask(Task task);
+    TaskResponseDto createTask(TaskRequestDto task);
 
     void deleteTaskById(Long id);
 

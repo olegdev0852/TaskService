@@ -2,38 +2,40 @@ package org.example.taskservice.service.serviceImpl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.example.taskservice.dto.TaskRequestDto;
+import org.example.taskservice.dto.TaskResponseDto;
+import org.example.taskservice.dto.mapping.TaskMapping;
 import org.example.taskservice.entity.Task;
-import org.example.taskservice.exception.GlobalExceptionHandler;
 import org.example.taskservice.exception.support.SupportException;
+import org.example.taskservice.exception.user.BadRequestException;
 import org.example.taskservice.exception.user.TaskNotFoundException;
 import org.example.taskservice.repository.TaskRepository;
 import org.example.taskservice.service.TaskService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TaskServiceImpl implements TaskService {
 
-    @Value("${tasks.clean.days}")
+    @Value("${tasks.scheduled.cleanup-tasks-days-threshold}")
     private int daysThreshold;
 
     private final TaskRepository taskRepository;
 
-    private final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final TaskMapping mapper;
 
     @Override
-    public List<Task> getTasks() {
+    public List<TaskResponseDto> getTasks() {
         try {
-            return taskRepository.findAll();
+            List<Task> tasks = taskRepository.findAll();
+            return mapper.toResponseDto(tasks);
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при получении списка задач",
@@ -44,13 +46,14 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task getTaskById(Long id) {
+    public TaskResponseDto getTaskById(Long id) {
         try {
-            return taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+            Task task = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+            return mapper.toResponseDto(task);
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при получении задачи по id",
-                    "findById(id=" + id + ") failed",
+                    "findById(id= %s) failed".formatted(id),
                     dae
             );
         }
@@ -58,15 +61,18 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional
     @Override
-    public Task createTask(Task task) {
+    public TaskResponseDto createTask(TaskRequestDto taskReq) {
         try {
-            return taskRepository.save(task);
-            //здесь нужно реализовать обработку ошибок
-
+            if (taskReq==null){
+               throw new BadRequestException();
+            }
+            Task task =mapper.fromRequestDto(taskReq);
+            Task savedTask = taskRepository.save(task);
+            return mapper.toResponseDto(savedTask);
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при создании задачи",
-                    "save(task = " + task + ") failed",
+                    "save(task = %s) failed".formatted(taskReq),
                     dae
             );
         }
@@ -82,7 +88,7 @@ public class TaskServiceImpl implements TaskService {
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при удалении задачи",
-                    "deleteById(id=" + ") failed",
+                    "deleteById(id= %s ) failed".formatted(id),
                     dae
             );
 
@@ -113,24 +119,14 @@ public class TaskServiceImpl implements TaskService {
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при обновлении задачи",
-                    "update for id=" + id + ", name=" + name + ", description=" + description,
+                    "update for id= %s, name= %s, description= %s".formatted(id,name,description),
                     dae
             );
         }
-
-
     }
 
     @Transactional
-    @Scheduled(cron = "0 0 10 * * ?")//вынести в конст
-    //0    0    10    *    *    ?
-    //┃    ┃    ┃     ┃    ┃    ┃
-    //┃    ┃    ┃     ┃    ┃    ┗ День недели (any)
-    //┃    ┃    ┃     ┃    ┗━━━━━━ Месяц (every month)
-    //┃    ┃    ┃     ┗━━━━━━━━━━━ День месяца (every day)
-    //┃    ┃    ┗━━━━━━━━━━━━━━━━━ Часы (10)
-    //┃    ┗━━━━━━━━━━━━━━━━━━━━━━ Минуты (0)
-    //┗━━━━━━━━━━━━━━━━━━━━━━━━━━━ Секунды (0)
+    @Scheduled(cron = "${tasks.scheduled.cleanup-tasks-cron}")
     public void cleanupOldTasks() {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysThreshold);
         taskRepository.deleteByTimeOfCreationBefore(cutoffDate);
