@@ -1,6 +1,5 @@
 package org.example.taskservice.service.serviceImpl;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.taskservice.dto.TaskRequestDto;
@@ -16,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,6 +31,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskMapping mapper;
 
+    @Transactional(readOnly = true)
     @Override
     public List<TaskResponseDto> getTasks() {
         try {
@@ -63,10 +64,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDto createTask(TaskRequestDto taskReq) {
         try {
-            if (taskReq==null){
-               throw new BadRequestException();
+            if (taskReq == null) {
+                throw new BadRequestException();
             }
-            Task task =mapper.fromRequestDto(taskReq);
+            Task task = mapper.fromRequestDto(taskReq);
             Task savedTask = taskRepository.save(task);
             return mapper.toResponseDto(savedTask);
         } catch (DataAccessException dae) {
@@ -119,7 +120,7 @@ public class TaskServiceImpl implements TaskService {
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при обновлении задачи",
-                    "update for id= %s, name= %s, description= %s".formatted(id,name,description),
+                    "update for id= %s, name= %s, description= %s".formatted(id, name, description),
                     dae
             );
         }
