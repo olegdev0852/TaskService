@@ -33,7 +33,6 @@ public class GlobalExceptionHandler {
         ErrorResponse body = new ErrorResponse(ex.getHttpStatus(), "Произошла ошибка. Обратитесь в техподдержку.", correlationId);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleOther(Exception ex, HttpServletRequest req) {
         String cid = getOrCreateCorrelationId(req);
