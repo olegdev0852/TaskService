@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 
 @Getter
@@ -36,7 +35,6 @@ public class Task {
     @Column(nullable = false, length = 70)
     private String name;
 
-    @NotBlank
     private String description;
 
     @CreationTimestamp
@@ -45,18 +43,15 @@ public class Task {
 
     private boolean completed;
 
-
     public Task() {
-        this.timeOfCreation = LocalDateTime.now();
         this.completed = false;
     }
 
-    public Task(String name, String description, LocalDateTime timeOfCreation) {
-
+    public Task(String name, String description) {
+        this();
         this.name = name;
         this.description = description;
-        this.timeOfCreation = timeOfCreation;
+
 
     }
-
 }

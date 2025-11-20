@@ -7,7 +7,6 @@ import org.example.taskservice.dto.TaskResponseDto;
 import org.example.taskservice.dto.mapping.TaskMapping;
 import org.example.taskservice.entity.Task;
 import org.example.taskservice.exception.support.SupportException;
-import org.example.taskservice.exception.user.BadRequestException;
 import org.example.taskservice.exception.user.TaskNotFoundException;
 import org.example.taskservice.repository.TaskRepository;
 import org.example.taskservice.service.TaskService;
@@ -64,9 +63,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDto createTask(TaskRequestDto taskReq) {
         try {
-            if (taskReq == null) {
-                throw new BadRequestException();
-            }
+
             Task task = mapper.fromRequestDto(taskReq);
             Task savedTask = taskRepository.save(task);
             return mapper.toResponseDto(savedTask);
@@ -80,6 +77,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public void deleteTaskById(Long id) {
         try {
             if (!taskRepository.existsById(id)) {

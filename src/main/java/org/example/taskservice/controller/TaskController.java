@@ -18,6 +18,7 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
+    //мб ВСЕ ResponseEntity<?> заменить на ResponseEntity<TaskResponseDto> ??
     public ResponseEntity<?> getAllTasks() {
         List<TaskResponseDto> tasks = taskService.getTasks();
         return ResponseEntity.ok().body(tasks);
@@ -32,13 +33,14 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<?> createTask(@RequestBody @Valid TaskRequestDto taskRequestDto) {
         taskService.createTask(taskRequestDto);
+        //я здесь возвращаю Дто запроса, как я понимаю лучше возвращать ДТО ответа
         return ResponseEntity.status(HttpStatus.CREATED).body(taskRequestDto);
     }
 
     @DeleteMapping("/{taskId}")
     public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
         taskService.deleteTaskById(taskId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(taskId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PutMapping("/{taskId}")
@@ -47,6 +49,7 @@ public class TaskController {
             @RequestBody TaskRequestDto taskRequest
     ) {
         taskService.updateTask(taskId, taskRequest.name(), taskRequest.description());
+        //лучше вернуть ДТО в теле?
         return ResponseEntity.ok("Задача успешно обновлена");
     }
 }
