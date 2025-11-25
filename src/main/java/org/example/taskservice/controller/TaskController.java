@@ -3,12 +3,14 @@ package org.example.taskservice.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.taskservice.dto.TaskRequestDto;
-import org.example.taskservice.dto.TaskResponseDto;
 import org.example.taskservice.service.TaskService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -18,23 +20,23 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping
-    //мб ВСЕ ResponseEntity<?> заменить на ResponseEntity<TaskResponseDto> ??
-    public ResponseEntity<?> getAllTasks() {
-        List<TaskResponseDto> tasks = taskService.getTasks();
-        return ResponseEntity.ok().body(tasks);
+    public ResponseEntity<?> getAllTasks(
+            @PageableDefault(sort = "timeOfCreation", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        var response = taskService.getTasks(pageable);
+        return ResponseEntity.ok().body(response);
     }
 
     @GetMapping("/{taskId}")
     public ResponseEntity<?> getTaskById(@PathVariable Long taskId) {
-        taskService.getTaskById(taskId);
-        return ResponseEntity.ok().body(taskId);
+        var response = taskService.getTaskById(taskId);
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping
     public ResponseEntity<?> createTask(@RequestBody @Valid TaskRequestDto taskRequestDto) {
-        taskService.createTask(taskRequestDto);
-        //я здесь возвращаю Дто запроса, как я понимаю лучше возвращать ДТО ответа
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskRequestDto);
+        var response = taskService.createTask(taskRequestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{taskId}")
@@ -49,7 +51,6 @@ public class TaskController {
             @RequestBody TaskRequestDto taskRequest
     ) {
         taskService.updateTask(taskId, taskRequest.name(), taskRequest.description());
-        //лучше вернуть ДТО в теле?
         return ResponseEntity.ok("Задача успешно обновлена");
     }
 }

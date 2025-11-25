@@ -12,6 +12,9 @@ import org.example.taskservice.repository.TaskRepository;
 import org.example.taskservice.service.TaskService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +35,25 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional(readOnly = true)
     @Override
+    public Page<TaskResponseDto> getTasks(Pageable pageable) {
+        try {
+
+            Page<Task> tasks = taskRepository.findAll(pageable);
+
+            return tasks.map(mapper::toResponseDto);
+
+        } catch (DataAccessException dae) {
+            throw new SupportException(
+                    "Ошибка при получении списка задач",
+                    "Ошибка при вызове taskRepository.findAll()",
+                    dae
+            );
+        }
+    }
+
+
+    /*@Transactional(readOnly = true)
+    @Override
     public List<TaskResponseDto> getTasks() {
         try {
             List<Task> tasks = taskRepository.findAll();
@@ -43,7 +65,8 @@ public class TaskServiceImpl implements TaskService {
                     dae
             );
         }
-    }
+    }*/
+
 
     @Override
     public TaskResponseDto getTaskById(Long id) {

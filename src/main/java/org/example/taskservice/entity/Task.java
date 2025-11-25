@@ -3,10 +3,7 @@ package org.example.taskservice.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -41,17 +39,11 @@ public class Task {
     @Column(nullable = false, updatable = false)
     private LocalDateTime timeOfCreation;
 
-    private boolean completed;
-
-    public Task() {
-        this.completed = false;
-    }
+    private boolean completed = false;
 
     public Task(String name, String description) {
-        this();
         this.name = name;
         this.description = description;
-
-
+        this.completed = false;
     }
 }
