@@ -2,149 +2,187 @@ package org.example.taskservice.service;
 
 import org.example.taskservice.dto.TaskRequestDto;
 import org.example.taskservice.dto.TaskResponseDto;
-import org.example.taskservice.dto.mapping.TaskMapping;
 import org.example.taskservice.entity.Task;
 import org.example.taskservice.exception.user.TaskNotFoundException;
 import org.example.taskservice.repository.TaskRepository;
-import org.example.taskservice.service.serviceImpl.TaskServiceImpl;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import java.time.LocalDateTime;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import java.util.List;
-import java.util.Optional;
 
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
+@Testcontainers
+@SpringBootTest
 class TaskServiceTest {
 
-    @Mock
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgres:13-alpine"));
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.jpa.show-sql", () -> "true");
+    }
+
+    @Autowired
+    private TaskService taskService;
+
+    @Autowired
     private TaskRepository taskRepository;
 
-    @Mock
-    private TaskMapping mapper;
-
-    @InjectMocks
-    private TaskServiceImpl taskService;
-
-   /* @Test
-    void getTasks_ShouldReturnListOfTasksDto_WhenTaskExist() {
-        Task task1 = new Task("name1", "des1");
-        Task task2 = new Task("name2", "des2");
-        List<Task> tasks = List.of(task1, task2);
-        TaskResponseDto taskResponseDto1 = new TaskResponseDto(1, "name1", "des1", LocalDateTime.now(), false);
-        TaskResponseDto taskResponseDto2 = new TaskResponseDto(2, "name2", "des2", LocalDateTime.now(), false);
-        List<TaskResponseDto> expected = List.of(taskResponseDto1, taskResponseDto2);
-
-        Mockito.when(taskRepository.findAll()).thenReturn(tasks);
-        Mockito.when(mapper.toResponseDto(tasks)).thenReturn(expected);
-
-        List<TaskResponseDto> actual = taskService.getTasks();
-
-        Assertions.assertEquals(expected, actual);
-        verify(taskRepository, times(1)).findAll();
-        verify(mapper, times(1)).toResponseDto(tasks);
-    }
-*/
-    @Test
-    void getTaskById_ShouldReturnTask_WhenTaskExist() {
-        Long taskId = 1L;
-        Task task1 = new Task(taskId, "name1", "des1", LocalDateTime.now(), false);
-        TaskResponseDto expected = new TaskResponseDto(1, "name1", "des1", LocalDateTime.now(), false);
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task1));
-        when(mapper.toResponseDto(task1)).thenReturn(expected);
-
-        TaskResponseDto actual = taskService.getTaskById(taskId);
-
-        Assertions.assertEquals(expected, actual);
-        verify(taskRepository, times(1)).findById(taskId);
-        verify(mapper, times(1)).toResponseDto(task1);
+    @BeforeEach
+    void setUp() {
+        taskRepository.deleteAll();
     }
 
     @Test
-    void getTaskById_ShouldThrowEx_WhenTaskNotFound() {
-        Long taskId = 99L;
-        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+    void getTasks_WhenNoTasks_ReturnsEmptyList() {
+        Pageable pageable = PageRequest.of(0, 10);
 
-        Assertions.assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(taskId));
+        Page<TaskResponseDto> result = taskService.getTasks(pageable);
 
-        verify(taskRepository, times(1)).findById(taskId);
-        verify(mapper, never()).toResponseDto(any(Task.class));
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void createTask_ShouldReturnTaskDto_WhenValidRequest() {
-        TaskRequestDto taskReq = new TaskRequestDto("name1", "des1");
-        Task task1 = new Task(1L, "name1", "des1", LocalDateTime.now(), false);
-        TaskResponseDto expected = new TaskResponseDto(1, "name1", "des1", LocalDateTime.now(), false);
-        when(mapper.fromRequestDto(taskReq)).thenReturn(task1);
-        when(taskRepository.save(task1)).thenReturn(task1);
-        when(mapper.toResponseDto(task1)).thenReturn(expected);
+    void getTasks_WhenTasksExist_ReturnsAllTasks() {
+        Pageable pageable = PageRequest.of(0, 10);
 
-        TaskResponseDto actual = taskService.createTask(taskReq);
+        TaskRequestDto task1 = new TaskRequestDto("Task 1", "Description 1");
+        TaskRequestDto task2 = new TaskRequestDto("Task 2", "Description 2");
 
-        Assertions.assertEquals(expected, actual);
-        verify(mapper, times(1)).fromRequestDto(taskReq);
-        verify(taskRepository, times(1)).save(task1);
-        verify(mapper, times(1)).toResponseDto(task1);
+        taskService.createTask(task1);
+        taskService.createTask(task2);
+
+        Page<TaskResponseDto> result = taskService.getTasks(pageable);
+
+        assertNotNull(result);
+        assertEquals(result.getTotalElements(), 2);
+
+        List<String> createdTasksNames = result.getContent().stream()
+                .map(TaskResponseDto::name)
+                .toList();
+
+        assertTrue(createdTasksNames.contains("Task 1"));
+        assertTrue(createdTasksNames.contains("Task 2"));
     }
 
     @Test
-    void createTask_ShouldThrowEx_WhenNotValidReq() {
-        TaskRequestDto taskReq = new TaskRequestDto("", "des1");
-        when(mapper.fromRequestDto(taskReq)).thenThrow(RuntimeException.class);
+    void getTaskById_WhenTaskExists_ReturnsTask() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Test Task", "Test Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
 
-        Assertions.assertThrows(RuntimeException.class, () -> taskService.createTask(taskReq));
+        TaskResponseDto result = taskService.getTaskById(createdTask.id());
+
+        assertNotNull(result);
+        assertEquals(createdTask.id(), result.id());
+        assertEquals("Test Task", result.name());
+        assertEquals("Test Description", result.description());
     }
 
     @Test
-    void updateTask_ShouldUpdateTask_WhenValidReq() {
-        Long taskId = 1L;
-        Task existing = new Task(taskId, "nameOld", "desOld", LocalDateTime.now(), false);
-        String upName = "nameUp";
-        String upDes = "desUp";
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existing));
-        when(taskRepository.save(existing)).thenReturn(existing);
-
-        taskService.updateTask(taskId, upName, upDes);
-
-        Assertions.assertEquals(upName, existing.getName());
-        Assertions.assertEquals(upDes, existing.getDescription());
-        verify(taskRepository, times(1)).findById(1L);
-        verify(taskRepository, times(1)).save(existing);
+    void getTaskById_WhenTaskNotExists_ThrowsTaskNotFoundException() {
+        assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(999L));
     }
 
     @Test
-    void updateTask_ShouldThrowEx_WhenTaskNotFound() {
-        Long taskId = 99L;
-        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
+    void createTask_WithValidData_CreatesTaskSuccessfully() {
+        TaskRequestDto taskRequest = new TaskRequestDto("New Task", "New Description");
 
-        Assertions.assertThrows(TaskNotFoundException.class, () -> taskService.updateTask(taskId, "newName", "newDes"));
+        TaskResponseDto result = taskService.createTask(taskRequest);
+
+        assertNotNull(result);
+        assertEquals("New Task", result.name());
+        assertEquals("New Description", result.description());
+
+        Task savedTask = taskRepository.findById(result.id()).orElseThrow();
+        assertEquals("New Task", savedTask.getName());
+        assertEquals("New Description", savedTask.getDescription());
     }
 
     @Test
-    void deleteTask_ShouldDeleteTask_WhenTaskExist() {
-        Long taskId = 1L;
-        when(taskRepository.existsById(taskId)).thenReturn(true);
+    void deleteTaskById_WhenTaskExists_DeletesTask() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Task to delete", "Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
 
-        taskService.deleteTaskById(taskId);
+        taskService.deleteTaskById(createdTask.id());
 
-        verify(taskRepository, times(1)).existsById(taskId);
-        verify(taskRepository, times(1)).deleteById(taskId);
+        assertFalse(taskRepository.existsById(createdTask.id()));
     }
 
     @Test
-    void deleteTask_ShouldThrowEx_WhenTaskNotExist() {
-        Long taskId = 99L;
-        when(taskRepository.existsById(taskId)).thenThrow(TaskNotFoundException.class);
-
-        Assertions.assertThrows(TaskNotFoundException.class, () -> taskService.deleteTaskById(taskId));
-        verify(taskRepository, times(1)).existsById(taskId);
-        verify(taskRepository, never()).deleteById(any());
+    void deleteTaskById_WhenTaskNotExists_ThrowsTaskNotFoundException() {
+        assertThrows(TaskNotFoundException.class, () -> taskService.deleteTaskById(999L));
     }
+
+    @Test
+    void updateTask_WithNameAndDescription_UpdatesTask() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Original Name", "Original Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
+
+        taskService.updateTask(createdTask.id(), "Updated Name", "Updated Description");
+
+        TaskResponseDto updatedTask = taskService.getTaskById(createdTask.id());
+        assertEquals("Updated Name", updatedTask.name());
+        assertEquals("Updated Description", updatedTask.description());
+    }
+
+    @Test
+    void updateTask_WithOnlyName_UpdatesOnlyName() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Original Name", "Original Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
+
+        taskService.updateTask(createdTask.id(), "Updated Name", null);
+
+        TaskResponseDto updatedTask = taskService.getTaskById(createdTask.id());
+        assertEquals("Updated Name", updatedTask.name());
+        assertEquals("Original Description", updatedTask.description());
+    }
+
+    @Test
+    void updateTask_WithOnlyDescription_UpdatesOnlyDescription() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Original Name", "Original Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
+
+        taskService.updateTask(createdTask.id(), null, "Updated Description");
+
+        TaskResponseDto updatedTask = taskService.getTaskById(createdTask.id());
+        assertEquals("Original Name", updatedTask.name());
+        assertEquals("Updated Description", updatedTask.description());
+    }
+
+    @Test
+    void updateTask_WithSameData_DoesNotUpdate() {
+        TaskRequestDto taskRequest = new TaskRequestDto("Original Name", "Original Description");
+        TaskResponseDto createdTask = taskService.createTask(taskRequest);
+
+        taskService.updateTask(createdTask.id(), "Original Name", "Original Description");
+
+        TaskResponseDto task = taskService.getTaskById(createdTask.id());
+        assertEquals("Original Name", task.name());
+        assertEquals("Original Description", task.description());
+    }
+
+    @Test
+    void updateTask_WhenTaskNotExists_ThrowsTaskNotFoundException() {
+        assertThrows(TaskNotFoundException.class,
+                () -> taskService.updateTask(999L, "New Name", "New Description"));
+    }
+
 }

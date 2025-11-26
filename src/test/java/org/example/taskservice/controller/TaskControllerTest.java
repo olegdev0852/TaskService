@@ -1,143 +1,115 @@
 package org.example.taskservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
 import org.example.taskservice.dto.TaskRequestDto;
-import org.example.taskservice.entity.Task;
-import org.example.taskservice.repository.TaskRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.example.taskservice.dto.TaskResponseDto;
+import org.example.taskservice.service.TaskService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import java.time.LocalDateTime;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@Testcontainers
-@AutoConfigureMockMvc
+@WebMvcTest(TaskController.class)
 class TaskControllerTest {
 
     @Autowired
-    private MockMvc mvc;
+    private MockMvc mockMvc;
 
     @Autowired
-    private TaskRepository taskRepository;
+    private ObjectMapper mapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    TaskService taskService;
 
-    @Container
-    private static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:13-alpine");
-
-    @DynamicPropertySource
-    static void postgres(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-
-    }
-
-    @BeforeEach
-    void cleanDb() {
-        taskRepository.deleteAll();
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        TaskService taskService() {
+            return Mockito.mock(TaskService.class);
+        }
     }
 
     @Test
-    void getAllTasks() throws Exception {
-        taskRepository.save(new Task("Test1", "Desc1"));
-        taskRepository.save(new Task("Test2", "Desc2"));
+    void getAllTasks_shouldReturnTasks() throws Exception {
+        List<TaskResponseDto> mockList = List.of(
+                new TaskResponseDto(
+                        1L, "Task1", "Desc1", LocalDateTime.now(), false),
+                new TaskResponseDto(
+                        2L, "Task2", "Desc2", LocalDateTime.now(), false)
+        );
+        Pageable expectedPageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "timeOfCreation"));
+        Page<TaskResponseDto> mockPage = new PageImpl<>(mockList, expectedPageable, mockList.size());
 
-        mvc.perform(get("/api/tasks"))
+        Mockito.when(taskService.getTasks(Mockito.any(Pageable.class))).thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Test1"))
-                .andExpect(jsonPath("$[1].name").value("Test2"))
-                .andExpect(jsonPath("$[0].description").value("Desc1"))
-                .andExpect(jsonPath("$[1].description").value("Desc2"));
+                .andExpect(jsonPath("$.content").exists())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].name").value("Task1"))
+                .andExpect(jsonPath("$.content[1].id").value(2))
+                .andExpect(jsonPath("$.content[1].name").value("Task2"));
     }
 
     @Test
-    @SneakyThrows
-    void getTaskById() {
+    void getTaskById_shouldReturnTask() throws Exception {
+        TaskResponseDto dto = new TaskResponseDto(
+                1L, "Task1", "Desc1", LocalDateTime.now(), false);
 
-        Task task = new Task("Test1", "Desc1");
-        Task savedTask = taskRepository.save(task);
+        Mockito.when(taskService.getTaskById(1L)).thenReturn(dto);
 
-        //проблема в том что мой метод getTaskById в контроллере
-        // возвращает ID по которому обратились и эти проверки не проходят
-        //как я понимаю нужно изменить метод контролера чтоб он возвращал ДТО
-        mvc.perform(get("/api/tasks/" + savedTask.getId()))
+        mockMvc.perform(get("/api/tasks/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test1"))
-                .andExpect(jsonPath("$.description").value("Desc1"));
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
-    void createTask_SimpleTest() throws Exception {
-        String json = "{\"name\":\"Test\",\"description\":\"Desc\"}";
+    void createTask_shouldReturnCreated() throws Exception {
+        TaskRequestDto req = new TaskRequestDto("New Task", "New desc");
+        TaskResponseDto res = new TaskResponseDto(
+                10L, "New Task", "New desc", LocalDateTime.now(), false);
 
-        mvc.perform(post("/api/tasks")
+        Mockito.when(taskService.createTask(any(TaskRequestDto.class))).thenReturn(res);
+
+        mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andExpect(status().isCreated());
-    }
-
-    @Test
-    void createTask() throws Exception {
-
-        TaskRequestDto requestDto = new TaskRequestDto(
-                "Test Task",
-                "Task description"
-
-        );
-
-        mvc.perform(
-                        post("/api/tasks")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(requestDto))
-                )
+                        .content(mapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value(requestDto.name()))
-                .andExpect(jsonPath("$.description").value(requestDto.description()));
+                .andExpect(jsonPath("$.id").value(10));
     }
 
     @Test
-    void deleteTask() throws Exception {
-        Task task = new Task("Test1", "Desc1");
-        Task savedTask = taskRepository.save(task);
-
-        mvc.perform(delete("/api/tasks/" + savedTask.getId()))
+    void deleteTask_shouldReturnNoContent() throws Exception {
+        mockMvc.perform(delete("/api/tasks/5"))
                 .andExpect(status().isNoContent());
+
+        Mockito.verify(taskService).deleteTaskById(5L);
     }
 
     @Test
-    void updateTask() throws Exception {
-        Task task = new Task("Test1", "Desc1");
-        Task savedTask = taskRepository.save(task);
+    void updateTask_shouldReturnOk() throws Exception {
+        TaskRequestDto req = new TaskRequestDto("NewName", "NewDescr");
 
-        TaskRequestDto requestDto = new TaskRequestDto(
-                "Test Task",
-                "Task description"
-        );
+        mockMvc.perform(put("/api/tasks/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Задача успешно обновлена"));
 
-        mvc.perform(
-                        put("/api/tasks/" + savedTask.getId())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(requestDto))
-                )
-                //проверяю только статус так как контроллер возвращает только его
-                //не совсем нравится такое, мне кажется нужно изменить метод в контроллере
-                .andExpect(status().isOk());
+        Mockito.verify(taskService)
+                .updateTask(eq(3L), eq("NewName"), eq("NewDescr"));
     }
 }
