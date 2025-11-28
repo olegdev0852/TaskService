@@ -117,6 +117,19 @@ class TaskServiceTest {
     }
 
     @Test
+    void createTask_WithOutName() {
+        TaskRequestDto taskRequest = new TaskRequestDto("", "New Description");
+
+        TaskResponseDto result = taskService.createTask(taskRequest);
+
+        assertNotNull(result);
+        assertEquals("New Description", result.description());
+
+        Task savedTask = taskRepository.findById(result.id()).orElseThrow();
+        assertEquals("New Description", savedTask.getDescription());
+    }
+
+    @Test
     void deleteTaskById_WhenTaskExists_DeletesTask() {
         TaskRequestDto taskRequest = new TaskRequestDto("Task to delete", "Description");
         TaskResponseDto createdTask = taskService.createTask(taskRequest);

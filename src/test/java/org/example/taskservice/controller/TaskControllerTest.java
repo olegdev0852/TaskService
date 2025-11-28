@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,16 +30,8 @@ class TaskControllerTest {
     @Autowired
     private ObjectMapper mapper;
 
-    @Autowired
+    @MockitoBean
     TaskService taskService;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        TaskService taskService() {
-            return Mockito.mock(TaskService.class);
-        }
-    }
 
     @Test
     void getAllTasks_shouldReturnTasks() throws Exception {
