@@ -3,18 +3,15 @@ package org.example.taskservice.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -23,7 +20,7 @@ public class Task {
     @SequenceGenerator(
             name = "sequence_task",
             sequenceName = "sequence_task",
-            allocationSize = 1
+            allocationSize = 50
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -36,27 +33,17 @@ public class Task {
     @Column(nullable = false, length = 70)
     private String name;
 
-    @NotBlank
     private String description;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime timeOfCreation;
 
-    private boolean completed;
+    private boolean completed = false;
 
-
-    public Task() {
-        this.timeOfCreation = LocalDateTime.now();
-        this.completed = false;
-    }
-
-    public Task(String name, String description, LocalDateTime timeOfCreation) {
-
+    public Task(String name, String description) {
         this.name = name;
         this.description = description;
-        this.timeOfCreation = timeOfCreation;
-
+        this.completed = false;
     }
-
 }

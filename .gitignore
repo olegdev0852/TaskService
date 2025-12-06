@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+/src/test/java/org/example/taskservice/controller/TaskControllerTestOld.java
+/src/test/java/org/example/taskservice/service/TaskServiceTestOld.java

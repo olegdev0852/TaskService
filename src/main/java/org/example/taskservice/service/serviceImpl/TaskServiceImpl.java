@@ -7,17 +7,17 @@ import org.example.taskservice.dto.TaskResponseDto;
 import org.example.taskservice.dto.mapping.TaskMapping;
 import org.example.taskservice.entity.Task;
 import org.example.taskservice.exception.support.SupportException;
-import org.example.taskservice.exception.user.BadRequestException;
 import org.example.taskservice.exception.user.TaskNotFoundException;
 import org.example.taskservice.repository.TaskRepository;
 import org.example.taskservice.service.TaskService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +33,11 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<TaskResponseDto> getTasks() {
+    public Page<TaskResponseDto> getTasks(Pageable pageable) {
         try {
-            List<Task> tasks = taskRepository.findAll();
-            return mapper.toResponseDto(tasks);
+            Page<Task> tasks = taskRepository.findAll(pageable);
+
+            return tasks.map(mapper::toResponseDto);
         } catch (DataAccessException dae) {
             throw new SupportException(
                     "Ошибка при получении списка задач",
@@ -64,9 +65,6 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskResponseDto createTask(TaskRequestDto taskReq) {
         try {
-            if (taskReq == null) {
-                throw new BadRequestException();
-            }
             Task task = mapper.fromRequestDto(taskReq);
             Task savedTask = taskRepository.save(task);
             return mapper.toResponseDto(savedTask);
@@ -80,6 +78,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public void deleteTaskById(Long id) {
         try {
             if (!taskRepository.existsById(id)) {
