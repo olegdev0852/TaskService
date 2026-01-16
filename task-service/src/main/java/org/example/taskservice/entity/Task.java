@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -20,7 +22,7 @@ public class Task {
     @SequenceGenerator(
             name = "sequence_task",
             sequenceName = "sequence_task",
-            allocationSize = 50
+            allocationSize = 1
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -30,20 +32,22 @@ public class Task {
 
     @NotBlank
     @Size(max = 70)
-    @Column(nullable = false, length = 70)
+    @Column(name = "name", nullable = false, length = 70)
     private String name;
 
+    @Column(name = "description")
     private String description;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime timeOfCreation;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    private boolean completed = false;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
-        this.completed = false;
     }
 }

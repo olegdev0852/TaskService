@@ -134,7 +134,7 @@ public class TaskServiceImpl implements TaskService {
     @Scheduled(cron = "${tasks.scheduled.cleanup-tasks-cron}")
     public void cleanupOldTasks() {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysThreshold);
-        taskRepository.deleteByTimeOfCreationBefore(cutoffDate);
+        taskRepository.deleteByCreatedAtBefore(cutoffDate);
     }
 
 }

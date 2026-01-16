@@ -21,7 +21,7 @@ public class TaskController implements TaskServiceApi {
 
     @Override
     public PagedResponse<TaskResponseDto> getAllTasks(int page, int size, String sort) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("timeOfCreation").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<TaskResponseDto> pageResult = taskService.getTasks(pageable);
 
         return new PagedResponse<>(

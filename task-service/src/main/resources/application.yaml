@@ -7,13 +7,16 @@ spring:
         password: root
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: none
         show-sql: true
     data:
       web:
         pageable:
             default-page-size: 10
             max-page-size: 100
+    liquibase:
+      change-log: classpath:/db/changelog/changelog-master.yaml
+      enabled: true
 
 server:
     error:
