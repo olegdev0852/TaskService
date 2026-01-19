@@ -1,0 +1,7 @@
+CREATE TABLE tasks(
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(70) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);

@@ -22,7 +22,7 @@ public class Task {
     @SequenceGenerator(
             name = "sequence_task",
             sequenceName = "sequence_task",
-            allocationSize = 1
+            allocationSize = 50
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
