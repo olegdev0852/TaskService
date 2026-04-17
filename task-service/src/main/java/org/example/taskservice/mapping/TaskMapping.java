@@ -1,4 +1,4 @@
-package org.example.taskservice.dto.mapping;
+package org.example.taskservice.mapping;
 
 import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;

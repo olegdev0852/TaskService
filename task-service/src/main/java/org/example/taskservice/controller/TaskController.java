@@ -1,6 +1,7 @@
 package org.example.taskservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.jwtstarter.model.ParsedJwt;
 import org.example.taskservice.api.controller.TaskServiceApi;
 import org.example.taskservice.api.dto.PagedResponse;
 import org.example.taskservice.api.dto.TaskRequestDto;
@@ -10,19 +11,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
 public class TaskController implements TaskServiceApi {
 
-    private final TaskService taskService; // твоя бизнес-логика возвращает Page<TaskResponseDto> или Page<TaskEntity>
+    private final TaskService taskService;
 
     @Override
-    public PagedResponse<TaskResponseDto> getAllTasks(int page, int size, String sort) {
+    public PagedResponse<TaskResponseDto> getAllTasks(int page, int size, String sort, ParsedJwt jwt) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<TaskResponseDto> pageResult = taskService.getTasks(pageable);
+        Page<TaskResponseDto> pageResult = taskService.getTasks(pageable, jwt);
 
         return new PagedResponse<>(
                 pageResult.getContent(),
@@ -34,23 +34,23 @@ public class TaskController implements TaskServiceApi {
     }
 
     @Override
-    public TaskResponseDto getTaskById(Long taskId) {
-        return taskService.getTaskById(taskId);
+    public TaskResponseDto getTaskById(Long taskId, ParsedJwt jwt) {
+        return taskService.getTaskById(taskId, jwt);
     }
 
     @Override
-    public TaskResponseDto createTask(TaskRequestDto taskRequestDto) {
-        return taskService.createTask(taskRequestDto);
+    public TaskResponseDto createTask(TaskRequestDto taskRequestDto, ParsedJwt jwt) {
+        return taskService.createTask(taskRequestDto, jwt);
     }
 
     @Override
-    public TaskResponseDto updateTask(Long taskId, TaskRequestDto taskRequestDto) {
-        return taskService.updateTask(taskId, taskRequestDto);
+    public TaskResponseDto updateTask(Long taskId, TaskRequestDto taskRequestDto, ParsedJwt jwt) {
+        return taskService.updateTask(taskId, taskRequestDto,jwt);
     }
 
     @Override
-    public void deleteTask(Long taskId) {
-        taskService.deleteTaskById(taskId);
+    public void deleteTask(Long taskId, ParsedJwt jwt) {
+        taskService.deleteTaskById(taskId,jwt);
     }
 
 }

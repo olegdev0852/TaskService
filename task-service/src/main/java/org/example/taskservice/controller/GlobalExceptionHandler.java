@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
 
         log.info("User error: status={}, msg={}", ex.getHttpStatus(), ex.getUserMessage());
 
-        ErrorResponse body = new ErrorResponse(ex.getHttpStatus(), ex.getUserMessage(), null);
+        ErrorResponse body = new ErrorResponse(ex.getHttpStatus().value(), ex.getUserMessage(), null);
         return ResponseEntity.status(ex.getHttpStatus()).body(body);
     }
 
@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
         String correlationId = getOrCreateCorrelationId(req);
         log.error("Support error:  cid={}, details={}", correlationId, ex.getDebugDetails(), ex);
 
-        ErrorResponse body = new ErrorResponse(ex.getHttpStatus(), "Произошла ошибка. Обратитесь в техподдержку.", correlationId);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        ErrorResponse body = new ErrorResponse(ex.getHttpStatus().value(), "Произошла ошибка. Обратитесь в техподдержку.", correlationId);
+        return ResponseEntity.status(ex.getHttpStatus()).body(body);
     }
 
     @ExceptionHandler(Exception.class)
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
         String cid = getOrCreateCorrelationId(req);
         log.error("Unhandled exception, cid={}", cid, ex);
 
-        ErrorResponse body = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Что-то пошло не так", cid);
+        ErrorResponse body = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Что-то пошло не так", cid);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 

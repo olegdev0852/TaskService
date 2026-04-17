@@ -7,7 +7,7 @@ spring:
         password: root
     jpa:
         hibernate:
-            ddl-auto: none
+            ddl-auto: validate
         show-sql: true
     data:
       web:
@@ -15,14 +15,19 @@ spring:
             default-page-size: 10
             max-page-size: 100
     liquibase:
-      change-log: classpath:/db/changelog/changelog-master.yaml
+      change-log: classpath:/db/changelog/changelog-master.xml
       enabled: true
 
 server:
     error:
         include-message: always
+    port: 8020
 
 tasks:
         scheduled:
             cleanup-tasks-cron: "0 0 10 * * ?"
             cleanup-tasks-days-threshold: 30
+
+logging:
+  level:
+    org.springframework.security: DEBUG  # Включаем дебаг логирование безопасности
