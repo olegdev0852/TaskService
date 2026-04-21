@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +54,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponseDto getTaskById(Long id, ParsedJwt jwt) {
         try {
             Task task = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
-            if(!task.getAuthorId().equals(jwt.getUserId())) {
+            if(!Objects.equals(task.getAuthorId(),  jwt.getUserId())) {
                 throw new TaskAccessException();
             }
             return mapper.toResponseDto(task);
@@ -88,7 +89,7 @@ public class TaskServiceImpl implements TaskService {
     public void deleteTaskById(Long id, ParsedJwt jwt) {
         try {
             Task task = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
-            if(!task.getAuthorId().equals(jwt.getUserId())) {
+            if(!Objects.equals(task.getAuthorId(),  jwt.getUserId())) {
                 throw new TaskAccessException();
             }
             taskRepository.deleteById(id);
@@ -109,7 +110,7 @@ public class TaskServiceImpl implements TaskService {
         Task existing = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
 
-        if(!existing.getAuthorId().equals(jwt.getUserId())) {
+        if(!Objects.equals(existing.getAuthorId(),  jwt.getUserId())) {
             throw new TaskAccessException();
         }
 
