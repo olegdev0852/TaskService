@@ -8,7 +8,7 @@ public class UserException extends RuntimeException {
 
     private final String userMessage;
 
-    private final HttpStatus httpStatus; // HTTP
+    private final HttpStatus httpStatus;
 
     public UserException(String userMessage, HttpStatus httpStatus) {
         super(userMessage);

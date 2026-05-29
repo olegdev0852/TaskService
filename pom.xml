@@ -14,7 +14,6 @@
     <name>task-service-parent</name>
     <description>Parent POM for Task Service (api + service)</description>
 
-    <!-- ===================== PROPERTIES ===================== -->
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,17 +26,14 @@
         <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
     </properties>
 
-    <!-- ===================== MODULES ===================== -->
     <modules>
         <module>task-service-api</module>
         <module>task-service</module>
     </modules>
 
-    <!-- ===================== DEPENDENCY MANAGEMENT ===================== -->
     <dependencyManagement>
         <dependencies>
 
-            <!-- Spring Boot BOM -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -46,29 +42,38 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Lombok -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
             </dependency>
 
-            <!-- MapStruct -->
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
                 <version>${mapstruct.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.example</groupId>
+                <artifactId>jwt-starter</artifactId>
+                <version>0.0.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-security</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
 
-    <!-- ===================== BUILD ===================== -->
     <build>
         <pluginManagement>
             <plugins>
 
-                <!-- Compiler -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -80,13 +85,11 @@
                     </configuration>
                 </plugin>
 
-                <!-- Spring Boot -->
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                 </plugin>
 
-                <!-- Tests -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>

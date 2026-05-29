@@ -21,31 +21,33 @@
     <description>Public API contract for task-service</description>
 
     <dependencies>
-        <!-- Spring Web (для интерфейсов контроллеров и аннотаций) -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
 
-        <!-- Jakarta Validation API (scope provided, реализация будет в сервисе) -->
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- Jackson Annotations (для сериализации/десериализации DTO) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
 
-        <!-- Для написания тестов API (опционально) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+            <dependency>
+                <groupId>org.example</groupId>
+                <artifactId>jwt-starter</artifactId>
+            </dependency>
+
     </dependencies>
 
 </project>

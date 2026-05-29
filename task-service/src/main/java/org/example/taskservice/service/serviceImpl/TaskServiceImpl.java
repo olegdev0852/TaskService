@@ -3,9 +3,11 @@ package org.example.taskservice.service.serviceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.jwtstarter.model.ParsedJwt;
 import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;
-import org.example.taskservice.dto.mapping.TaskMapping;
+import org.example.taskservice.exception.user.TaskAccessException;
+import org.example.taskservice.mapping.TaskMapping;
 import org.example.taskservice.entity.Task;
 import org.example.taskservice.exception.support.SupportException;
 import org.example.taskservice.exception.user.TaskNotFoundException;
@@ -19,6 +21,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -34,10 +37,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<TaskResponseDto> getTasks(Pageable pageable) {
+    public Page<TaskResponseDto> getTasks(Pageable pageable, ParsedJwt jwt) {
         try {
-            Page<Task> tasks = taskRepository.findAll(pageable);
-
+            Page<Task> tasks =  taskRepository.findByAuthorId(jwt.getUserId(), pageable);
             return tasks.map(mapper::toResponseDto);
         } catch (DataAccessException dae) {
             throw new SupportException(
@@ -49,9 +51,12 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponseDto getTaskById(Long id) {
+    public TaskResponseDto getTaskById(Long id, ParsedJwt jwt) {
         try {
             Task task = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+            if(!Objects.equals(task.getAuthorId(),  jwt.getUserId())) {
+                throw new TaskAccessException();
+            }
             return mapper.toResponseDto(task);
         } catch (DataAccessException dae) {
             throw new SupportException(
@@ -64,10 +69,11 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional
     @Override
-    public TaskResponseDto createTask( @Valid TaskRequestDto taskReq) {
+    public TaskResponseDto createTask( @Valid TaskRequestDto taskReq, ParsedJwt jwt) {
         try {
             Task task = mapper.fromRequestDto(taskReq);
             Task savedTask = taskRepository.save(task);
+            savedTask.setAuthorId(jwt.getUserId());
             return mapper.toResponseDto(savedTask);
         } catch (DataAccessException dae) {
             throw new SupportException(
@@ -80,10 +86,11 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public void deleteTaskById(Long id) {
+    public void deleteTaskById(Long id, ParsedJwt jwt) {
         try {
-            if (!taskRepository.existsById(id)) {
-                throw new TaskNotFoundException(id);
+            Task task = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException(id));
+            if(!Objects.equals(task.getAuthorId(),  jwt.getUserId())) {
+                throw new TaskAccessException();
             }
             taskRepository.deleteById(id);
         } catch (DataAccessException dae) {
@@ -98,10 +105,14 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional
     @Override
-    public TaskResponseDto updateTask(Long id, TaskRequestDto request) {
+    public TaskResponseDto updateTask(Long id, TaskRequestDto request, ParsedJwt jwt) {
 
         Task existing = taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
+
+        if(!Objects.equals(existing.getAuthorId(),  jwt.getUserId())) {
+            throw new TaskAccessException();
+        }
 
         boolean changed = false;
 

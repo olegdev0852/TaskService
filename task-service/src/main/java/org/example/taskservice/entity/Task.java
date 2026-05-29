@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -37,6 +38,9 @@ public class Task {
 
     @Column(name = "description")
     private String description;
+
+    @Column(name = "author_id")
+    private UUID authorId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
