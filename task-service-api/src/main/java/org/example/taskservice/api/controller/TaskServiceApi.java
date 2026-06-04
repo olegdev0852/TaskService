@@ -2,6 +2,7 @@ package org.example.taskservice.api.controller;
 
 import jakarta.validation.Valid;
 import org.example.jwtstarter.model.ParsedJwt;
+import org.example.taskservice.api.dto.AssignTaskRequest;
 import org.example.taskservice.api.dto.PagedResponse;
 import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;
@@ -24,6 +25,13 @@ public interface TaskServiceApi {
     @PostMapping
     @ResponseStatus(code = org.springframework.http.HttpStatus.CREATED)
     TaskResponseDto createTask(@Valid @RequestBody TaskRequestDto taskRequestDto, ParsedJwt jwt);
+
+    @PutMapping("assign/{id}")
+    TaskResponseDto assignTask (@PathVariable ("id") Long taskId,
+                                @RequestBody AssignTaskRequest request);
+
+    @PostMapping("approve/{id}")
+    TaskResponseDto approveTask (@PathVariable ("id") Long taskId);
 
     @PutMapping("/{id}")
     TaskResponseDto updateTask(@PathVariable("id") Long taskId,

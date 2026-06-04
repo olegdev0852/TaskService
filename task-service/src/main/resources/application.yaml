@@ -30,4 +30,10 @@ tasks:
 
 logging:
   level:
-    org.springframework.security: DEBUG  # Включаем дебаг логирование безопасности
+    org.springframework.security: DEBUG
+
+
+kafka:
+  bootstrap-servers: localhost:9092
+  task-service:
+    group-id: task-service-group

@@ -3,6 +3,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
     <include file="/db/changelog/sql/001-create-task-table.sql"/>
     <include file="/db/changelog/sql/002-add-colum-authorId.sql"/>
+    <include file="/db/changelog/sql/003-add-task-fields.sql"/>
 </databaseChangeLog>
 
 
