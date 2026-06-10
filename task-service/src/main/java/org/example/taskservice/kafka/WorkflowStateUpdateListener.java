@@ -6,7 +6,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.example.taskservice.api.dto.StateUpdateEvent;
 import org.example.taskservice.entity.Task;
-import org.example.taskservice.exception.user.TaskNotFoundException;
 import org.example.taskservice.repository.TaskRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,7 @@ public class WorkflowStateUpdateListener {
     private final TaskRepository taskRepository;
 
     @KafkaListener(
-            topics = "workflow.output",
+            topics = "${kafka.task-service.input-topic}",
             groupId = "${kafka.task-service.group-id:task-service-group}",
             containerFactory = "stateUpdateKafkaListenerContainerFactory"
     )
@@ -30,7 +29,6 @@ public class WorkflowStateUpdateListener {
     public void handleStateUpdate(ConsumerRecord<String, StateUpdateEvent> record) {
         StateUpdateEvent event = record.value();
 
-        // Читаем correlation id для трассировки
         Header correlationHeader = record.headers().lastHeader("correlation-id");
         String correlationId = correlationHeader != null
                 ? new String(correlationHeader.value(), StandardCharsets.UTF_8)
@@ -39,8 +37,12 @@ public class WorkflowStateUpdateListener {
         log.info("📥 Получено обновление состояния: taskId={}, newState={}, correlationId={}",
                 event.taskId(), event.newState(), correlationId);
 
-        Task task = taskRepository.findById(event.taskId())
-                .orElseThrow(() -> new TaskNotFoundException(event.taskId()));
+        Task task = taskRepository.findById(event.taskId()).orElse(null);
+
+        if(task ==null){
+            log.warn("Задача {} не найдена в БД. Сообщение пропущено", event.taskId());
+            return;
+        }
 
         task.setState(event.newState());
         taskRepository.save(task);

@@ -5,9 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.example.taskservice.api.state.TaskState;
-import org.example.taskservice.exception.user.BadRequestException;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -60,11 +57,11 @@ public class Task {
     @Column(name = "author_id")
     private UUID authorId;
 
-    @CreationTimestamp
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -73,20 +70,16 @@ public class Task {
         this.description = description;
     }
 
-    public boolean isAssignmentValid() {
-        return (assignedTo != null && deadline != null)
-                || (assignedTo == null && deadline == null);
+    @PrePersist
+    protected void onCreated(){
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    public void assignWithDeadline(UUID userId, LocalDateTime taskDeadline) {
-        System.out.println("Assigning with deadline " + taskDeadline);
-        System.out.println("Assigning with user " + userId);
-        if ((userId == null) != (taskDeadline == null)) {
-            throw new BadRequestException(
-                    "Назначение исполнителя и дедлайн обязательны одновременно"
-            );
-        }
-        this.assignedTo = userId;
-        this.deadline = taskDeadline;
+    @PreUpdate
+    protected void onUpdated(){
+        this.updatedAt = LocalDateTime.now();
     }
+
+
 }

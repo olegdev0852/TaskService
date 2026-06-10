@@ -9,15 +9,18 @@ import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;
 import org.example.taskservice.api.state.TaskState;
 import org.example.taskservice.entity.Task;
+import org.example.taskservice.event.TaskApprovedEvent;
+import org.example.taskservice.event.TaskAssignedEvent;
+import org.example.taskservice.event.TaskCreatedEvent;
 import org.example.taskservice.exception.support.SupportException;
 import org.example.taskservice.exception.user.BadRequestException;
 import org.example.taskservice.exception.user.TaskAccessException;
 import org.example.taskservice.exception.user.TaskNotFoundException;
-import org.example.taskservice.kafka.TaskEventPublisher;
 import org.example.taskservice.mapping.TaskMapping;
 import org.example.taskservice.repository.TaskRepository;
 import org.example.taskservice.service.TaskService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,7 +36,7 @@ import java.util.Objects;
 @Slf4j
 public class TaskServiceImpl implements TaskService {
 
-    private final TaskEventPublisher taskEventPublisher;
+   private final ApplicationEventPublisher eventPublisher;
     @Value("${tasks.scheduled.cleanup-tasks-days-threshold}")
     private int daysThreshold;
 
@@ -89,7 +92,7 @@ public class TaskServiceImpl implements TaskService {
             task.setAuthorId(jwt.getUserId());
             Task savedTask = taskRepository.save(task);
 
-            taskEventPublisher.publishTransition(savedTask, "TASK_CREATED");
+            eventPublisher.publishEvent(new TaskCreatedEvent(task));
             return mapper.toResponseDto(savedTask);
         } catch (DataAccessException dae) {
             throw new SupportException(
@@ -102,9 +105,6 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional
     @Override
-            /** Не стал добавлять ParsedJwt так как не увидел смысла,
-             * эту ручку дергает и так пользак с нужными правами(Gateway просто не пропустил бы)
-             * а то что можно назначать/апрувать только свои задачи... ну как я понимаю не требуется*/
     public TaskResponseDto assignTask(Long taskId, AssignTaskRequest request) {
         try {
             Task task = taskRepository.findById(taskId)
@@ -116,11 +116,11 @@ public class TaskServiceImpl implements TaskService {
                 );
             }
 
-            task.assignWithDeadline(request.assignedTo(), request.deadline());
+            task.setAssignedTo(request.assignedTo());
+            task.setDeadline(request.deadline());
             Task saved = taskRepository.save(task);
 
-            taskEventPublisher.publishTransition(saved, "EXECUTOR_ASSIGNED");
-
+            eventPublisher.publishEvent(new TaskAssignedEvent(task));
             return mapper.toResponseDto(saved);
         } catch (DataAccessException dae) {
             throw new SupportException(
@@ -138,8 +138,7 @@ public class TaskServiceImpl implements TaskService {
             Task task = taskRepository.findById(taskId)
                     .orElseThrow(() -> new TaskNotFoundException(taskId));
 
-            taskEventPublisher.publishTransition(task, "STEP_APPROVED");
-
+            eventPublisher.publishEvent(new TaskApprovedEvent(task));
             return mapper.toResponseDto(task);
         }catch (DataAccessException dae) {
             throw new SupportException(
@@ -205,7 +204,6 @@ public class TaskServiceImpl implements TaskService {
 
         return mapper.toResponseDto(existing);
     }
-
 
     @Transactional
     @Scheduled(cron = "${tasks.scheduled.cleanup-tasks-cron}")
