@@ -3,6 +3,8 @@ package org.example.taskservice.config;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.taskservice.api.dto.StateUpdateEvent;
 import org.example.taskservice.api.dto.TaskTransitionContext;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +13,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,16 +29,13 @@ public class TaskKafkaConfig {
         Map<String, Object> props = new HashMap<>();
 
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-
         props.put(ProducerConfig.ACKS_CONFIG, kafkaProperties.getProducer().getAcks());
         props.put(ProducerConfig.RETRIES_CONFIG, kafkaProperties.getProducer().getRetries());
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, kafkaProperties.getProducer().getBatchSize());
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, kafkaProperties.getProducer().getBufferMemory());
 
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                kafkaProperties.getProducer().getKeySerializer());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                kafkaProperties.getProducer().getValueSerializer());
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 
         return new DefaultKafkaProducerFactory<>(props);
     }
@@ -51,30 +51,20 @@ public class TaskKafkaConfig {
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getTaskService().getGroupId());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaProperties.getConsumer().getAutoOffsetReset());
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, kafkaProperties.getConsumer().isEnableAutoCommit());
 
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-                kafkaProperties.getConsumer().getAutoOffsetReset());
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
-                kafkaProperties.getConsumer().isEnableAutoCommit());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                kafkaProperties.getConsumer().getKeyDeserializer());
-
-        JsonDeserializer<StateUpdateEvent> jsonDeserializer =
-                new JsonDeserializer<>(StateUpdateEvent.class, false);
-
-        String trustedPackages = kafkaProperties.getConsumer()
-                .getProperties().getSpringJsonTrustedPackages();
-        if (trustedPackages != null && !trustedPackages.isEmpty()) {
-            jsonDeserializer.addTrustedPackages(trustedPackages.split(","));
-        }
+        JsonDeserializer<StateUpdateEvent> jsonDeserializer = new JsonDeserializer<>(StateUpdateEvent.class, false);
+        jsonDeserializer.addTrustedPackages("org.example.taskservice.api.dto");
 
         ErrorHandlingDeserializer<StateUpdateEvent> errorHandlingDeserializer =
                 new ErrorHandlingDeserializer<>(jsonDeserializer);
 
         return new DefaultKafkaConsumerFactory<>(
                 props,
-                new org.apache.kafka.common.serialization.StringDeserializer(),
+                new StringDeserializer(),
                 errorHandlingDeserializer
         );
     }

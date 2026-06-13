@@ -40,4 +40,5 @@ public interface TaskServiceApi {
     @DeleteMapping("/{taskId}")
     @ResponseStatus(code = org.springframework.http.HttpStatus.NO_CONTENT)
     void deleteTask(@PathVariable("taskId") Long taskId, ParsedJwt jwt);
+
 }

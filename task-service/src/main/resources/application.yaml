@@ -9,6 +9,9 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
   data:
     web:
       pageable:
@@ -42,17 +45,10 @@ kafka:
     retries: 3
     batch-size: 16384
     buffer-memory: 33554432
-    key-serializer: org.apache.kafka.common.serialization.StringSerializer
-    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
   consumer:
     auto-offset-reset: earliest
     enable-auto-commit: false
-    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-    properties:
-      spring.json.trusted.packages: org.example.taskservice.api.dto
-      spring.json.value.default.type: org.example.taskservice.api.dto.StateUpdateEvent
 
   task-service:
     group-id: task-service-group

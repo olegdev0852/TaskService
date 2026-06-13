@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.taskservice.event.TaskApprovedEvent;
 import org.example.taskservice.event.TaskAssignedEvent;
 import org.example.taskservice.event.TaskCreatedEvent;
-import org.example.taskservice.kafka.TaskEventPublisher;
+import org.example.taskservice.event.TaskStateUpdatedEvent;
+import org.example.taskservice.kafka.TaskEventProducer;
+import org.example.taskservice.service.TaskService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -15,26 +17,35 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TaskEventListener {
 
-    private final TaskEventPublisher kafkaEventPublisher;
+    private final TaskEventProducer kafkaEventPublisher;
+
+    private final TaskService taskService;
 
     @Async
     @EventListener
     public void onTaskCreated(TaskCreatedEvent event) {
         log.info("Получено внутреннее событие: задача {} создана. Отправляю в Kafka...", event.task().getId());
-        kafkaEventPublisher.publishTransition(event.task(), "TASK_CREATED");
+        kafkaEventPublisher.publishTransition(event.task());
     }
 
     @Async
     @EventListener
     public void onTaskAssigned(TaskAssignedEvent event) {
         log.info("Получено внутреннее событие: задаче {} назначен исполнитель. Отправляю в Kafka...", event.task().getId());
-        kafkaEventPublisher.publishTransition(event.task(), "EXECUTOR_ASSIGNED");
+        kafkaEventPublisher.publishTransition(event.task());
     }
 
     @Async
     @EventListener
     public void onTaskApproved(TaskApprovedEvent event) {
         log.info("Получено внутреннее событие: задача {} аппрувнута. Отправляю в Kafka...", event.task().getId());
-        kafkaEventPublisher.publishTransition(event.task(), "STEP_APPROVED");
+        kafkaEventPublisher.publishTransition(event.task());
+    }
+
+    @Async
+    @EventListener
+    public void onTaskStateUpdated(TaskStateUpdatedEvent event) {
+        log.info("Получено внутреннее событие: обновление задачи {}", event.taskId());
+        taskService.updateTaskState(event.taskId(), event.newState());
     }
 }

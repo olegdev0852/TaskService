@@ -14,7 +14,6 @@ public record TaskResponseDto(
         boolean noTest,
         UUID assignedTo,
         LocalDateTime deadline,
-        LocalDateTime createdAt,
-        boolean completed
+        LocalDateTime createdAt
 ){}
 

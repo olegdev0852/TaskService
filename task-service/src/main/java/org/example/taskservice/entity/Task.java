@@ -57,10 +57,8 @@ public class Task {
     @Column(name = "author_id")
     private UUID authorId;
 
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -80,6 +78,4 @@ public class Task {
     protected void onUpdated(){
         this.updatedAt = LocalDateTime.now();
     }
-
-
 }

@@ -4,6 +4,7 @@ import org.example.jwtstarter.model.ParsedJwt;
 import org.example.taskservice.api.dto.AssignTaskRequest;
 import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;
+import org.example.taskservice.api.state.TaskState;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -23,4 +24,6 @@ public interface TaskService {
     void deleteTaskById(Long id,ParsedJwt jwt);
 
     TaskResponseDto updateTask(Long id, TaskRequestDto taskRequestDto, ParsedJwt jwt);
+
+    void updateTaskState(Long id, TaskState newState);
 }

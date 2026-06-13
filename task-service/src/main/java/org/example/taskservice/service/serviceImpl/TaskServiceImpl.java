@@ -1,6 +1,5 @@
 package org.example.taskservice.service.serviceImpl;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.jwtstarter.model.ParsedJwt;
@@ -78,7 +77,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Transactional
     @Override
-    public TaskResponseDto createTask(@Valid TaskRequestDto taskReq, ParsedJwt jwt) {
+    public TaskResponseDto createTask(TaskRequestDto taskReq, ParsedJwt jwt) {
         try {
             Task task = mapper.fromRequestDto(taskReq);
 
@@ -203,6 +202,18 @@ public class TaskServiceImpl implements TaskService {
         }
 
         return mapper.toResponseDto(existing);
+    }
+
+    @Override
+    @Transactional
+    public void updateTaskState(Long taskId, TaskState newState) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException(taskId));
+
+        task.setState(newState);
+        taskRepository.save(task);
+
+        log.info("Задача {} обновлена через Workflow: state={}", taskId, newState);
     }
 
     @Transactional
