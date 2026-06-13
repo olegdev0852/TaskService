@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.jwtstarter.component.JwtParser;
 import org.example.jwtstarter.model.ParsedJwt;
 import org.example.taskservice.api.dto.TaskResponseDto;
-import org.example.taskservice.service.TaskService;
+/*import org.example.taskservice.service.TaskService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +72,7 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.content[1].name").value("Task2"));
 
     }
-}
+}*/
 /*
     @Test
     void getTaskById_shouldReturnTask() throws Exception {

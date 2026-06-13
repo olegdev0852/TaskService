@@ -3,6 +3,7 @@ package org.example.taskservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.jwtstarter.model.ParsedJwt;
 import org.example.taskservice.api.controller.TaskServiceApi;
+import org.example.taskservice.api.dto.AssignTaskRequest;
 import org.example.taskservice.api.dto.PagedResponse;
 import org.example.taskservice.api.dto.TaskRequestDto;
 import org.example.taskservice.api.dto.TaskResponseDto;
@@ -41,6 +42,16 @@ public class TaskController implements TaskServiceApi {
     @Override
     public TaskResponseDto createTask(TaskRequestDto taskRequestDto, ParsedJwt jwt) {
         return taskService.createTask(taskRequestDto, jwt);
+    }
+
+    @Override
+    public TaskResponseDto assignTask(Long taskId, AssignTaskRequest request) {
+        return taskService.assignTask(taskId, request);
+    }
+
+    @Override
+    public TaskResponseDto approveTask(Long taskId) {
+        return taskService.approveTask(taskId);
     }
 
     @Override

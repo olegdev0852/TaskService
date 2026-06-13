@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.example.taskservice.api.state.TaskState;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -39,19 +38,44 @@ public class Task {
     @Column(name = "description")
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state", nullable = false, length = 50)
+    private TaskState state = TaskState.CREATED;
+
+    @Column(name = "no_test", nullable = false)
+    private boolean noTest = false;
+
+    @Column(name = "tech_task", nullable = false)
+    private boolean techTask = false;
+
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
+
+    @Column(name = "assigned_to")
+    private UUID assignedTo;
+
     @Column(name = "author_id")
     private UUID authorId;
 
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
+    }
+
+    @PrePersist
+    protected void onCreated(){
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdated(){
+        this.updatedAt = LocalDateTime.now();
     }
 }

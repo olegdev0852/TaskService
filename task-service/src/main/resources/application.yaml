@@ -1,33 +1,57 @@
 spring:
-    application:
-        name: TaskService
-    datasource:
-        url: jdbc:postgresql://localhost:5432/postgres
-        username: postgres
-        password: root
-    jpa:
-        hibernate:
-            ddl-auto: validate
-        show-sql: true
-    data:
-      web:
-        pageable:
-            default-page-size: 10
-            max-page-size: 100
-    liquibase:
-      change-log: classpath:/db/changelog/changelog-master.xml
-      enabled: true
+  application:
+    name: TaskService
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    web:
+      pageable:
+        default-page-size: 10
+        max-page-size: 100
+  liquibase:
+    change-log: classpath:/db/changelog/changelog-master.xml
+    enabled: true
 
 server:
-    error:
-        include-message: always
-    port: 8020
+  error:
+    include-message: always
+  port: 8020
 
 tasks:
-        scheduled:
-            cleanup-tasks-cron: "0 0 10 * * ?"
-            cleanup-tasks-days-threshold: 30
+  scheduled:
+    cleanup-tasks-cron: "0 0 10 * * ?"
+    cleanup-tasks-days-threshold: 30
 
 logging:
   level:
-    org.springframework.security: DEBUG  # Включаем дебаг логирование безопасности
+    org.springframework.security: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka.clients.producer: INFO
+
+kafka:
+  bootstrap-servers: localhost:9092
+
+  producer:
+    acks: all
+    retries: 3
+    batch-size: 16384
+    buffer-memory: 33554432
+
+  consumer:
+    auto-offset-reset: earliest
+    enable-auto-commit: false
+
+  task-service:
+    group-id: task-service-group
+    concurrency: 1
+    input-topic: workflow.output
+    output-topic: workflow.input
