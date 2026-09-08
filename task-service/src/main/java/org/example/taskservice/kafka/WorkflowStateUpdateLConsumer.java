@@ -8,7 +8,6 @@ import org.example.taskservice.event.TaskStateUpdatedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -22,7 +21,7 @@ public class WorkflowStateUpdateLConsumer {
             groupId = "${kafka.task-service.group-id:task-service-group}",
             containerFactory = "stateUpdateKafkaListenerContainerFactory"
     )
-    @Transactional
+
     public void handleStateUpdate(ConsumerRecord<String, StateUpdateEvent> record) {
         StateUpdateEvent event = record.value();
 
